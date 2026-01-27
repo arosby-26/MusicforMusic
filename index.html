@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MusicforMusic</title>
+    </playlist { list-style: none; padding: 0; margin-top: 15px; }
+.playlist li { 
+  background: #444; 
+  margin: 5px 0; 
+  padding: 10px; 
+  cursor: pointer; 
+  border-radius: 5px; 
+}
+.playlist li:hover { background: #666; }
+!-- (2) Letakkan CSS di dalam tag <style> -->
+    <style>
+        .player {
+            background: #222;
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            width: 300px;
+            font-family: sans-serif;
+        }
+        .playlist { list-style: none; padding: 0; margin-top: 15px; }
+        .playlist li { 
+            background: #444; margin: 5px 0; padding: 10px; 
+            cursor: pointer; border-radius: 5px; 
+        }
+        .playlist li:hover { background: #666; }
+    </style>
+</head>
+<body>
+
+   <div class="player">
+  <h3 id="current-title">Pilih Lagu...</h3>
+  <audio id="audio"></audio>
+  
+  <div class="controls">
+    <button onclick="playPause()">Play/Pause</button>
+  </div>
+
+  <ul class="playlist">
+    <li onclick="loadSong('Lagu 1', 'link-lagu1.mp3')">Lagu 1</li>
+    <li onclick="loadSong('Lagu 2', 'link-lagu2.mp3')">Lagu 2</li>
+    <li onclick="loadSong('Lagu 3', 'link-lagu3.mp3')">Lagu 3</li>
+  </ul>
+</div>
+
+    <div class="player">
+        <h3 id="current-title">Pilih Lagu...</h3>
+        <audio id="audio"></audio>
+        
+        <div class="controls">
+            <button onclick="playPause()">Play/Pause</button>
+        </div>
+
+        <ul class="playlist">
+            <!-- Ganti link .mp3 dengan file punyamu -->
+            <li onclick="loadSong('Lagu 1', 'musik1.mp3')">Adella</li>
+            <li onclick="loadSong('Lagu 2', 'musik2.mp3')">Lagu Santai 2</li>
+        </ul>
+    </div>
+
+    <script>
+        const audio = document.getElementById('audio');
+        const title = document.getElementById('current-title');
+
+        function loadSong(name, url) {
+            title.innerText = "Playing: " + name;
+            audio.src = url;
+            audio.play();
+        }
+
+        function playPause() {
+            if (audio.src === "") {
+                alert("Pilih lagu dulu!");
+                return;
+            }
+            audio.paused ? audio.play() : audio.pause();
+        }
+    </script>
+</body>
+</html>
