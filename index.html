@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Music Player Pro</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; padding: 50px; background: #121212; color: white; }
+        .player { background: #1e1e1e; padding: 30px; border-radius: 20px; width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h3 { margin-bottom: 20px; color: #1DB954; } /* Warna Hijau Spotify */
+        .controls { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
+        button { background: #333; color: white; border: none; padding: 10px 15px; border-radius: 50px; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #1DB954; }
+        .playlist { list-style: none; padding: 0; text-align: left; }
+        .playlist li { padding: 10px; border-bottom: 1px solid #333; cursor: pointer; }
+        .playlist li:hover { color: #1DB954; }
+        .active { color: #1DB954; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="player">
+    <h3 id="display-title">Pilih Lagu</h3>
+    <audio id="audio-element"></audio>
+
+    <div class="controls">
+        <button onclick="prev()">⏮ Prev</button>
+        <button onclick="playPause()" id="btn-play">▶ Play</button>
+        <button onclick="next()">Next ⏭</button>
+    </div>
+
+    <ul class="playlist" id="playlist-list">
+        <!-- Daftar lagu akan muncul otomatis dari JavaScript -->
+    </ul>
+</div>
+
+<script>
+    // 1. DATA PLAYLIST (Ganti link Drive di sini)
+ const songs = [
+    { title: "Drive USB Sandisk", url: "Music" },
+    { title: "Lagu Flashdisk 2", url: "lagu2.mp3" },
+    { title: "Lagu Flashdisk 3", url: "lagu3.mp3" }
+];
+
+
+    let currentIndex = 0;
+    const audio = document.getElementById('audio-element');
+    const displayTitle = document.getElementById('display-title');
+    const playBtn = document.getElementById('btn-play');
+    const playlistElement = document.getElementById('playlist-list');
+
+    // 2. FUNGSI GENERATE PLAYLIST KE LAYAR
+    function buildPlaylist() {
+        songs.forEach((song, index) => {
+            let li = document.createElement('li');
+            li.innerHTML = song.title;
+            li.setAttribute('id', 'song-' + index);
+            li.onclick = () => loadSong(index);
+            playlistElement.appendChild(li);
+        });
+    }
+
+    // 3. FUNGSI MUAT LAGU
+    function loadSong(index) {
+        currentIndex = index;
+        audio.src = songs[currentIndex].url;
+        displayTitle.innerText = songs[currentIndex].title;
+        
+        // Highlight lagu yang aktif
+        document.querySelectorAll('.playlist li').forEach(el => el.classList.remove('active'));
+        document.getElementById('song-' + index).classList.add('active');
+        
+        audio.play();
+        playBtn.innerText = "⏸ Pause";
+    }
+
+    // 4. TOMBOL CONTROLS
+    function playPause() {
+        if (audio.src === "") { loadSong(0); return; }
+        if (audio.paused) {
+            audio.play();
+            playBtn.innerText = "⏸ Pause";
+        } else {
+            audio.pause();
+            playBtn.innerText = "▶ Play";
+        }
+    }
+
+    function next() {
+        currentIndex = (currentIndex + 1) % songs.length;
+        loadSong(currentIndex);
+    }
+
+    function prev() {
+        currentIndex = (currentIndex - 1 + songs.length) % songs.length;
+        loadSong(currentIndex);
+    }
+
+    // 5. OTOMATIS NEXT KALAU LAGU HABIS
+    audio.onended = () => next();
+
+    // Jalankan daftar lagu saat halaman dibuka
+    buildPlaylist();
+</script>
+
+</body>
+</html>
+
