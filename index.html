@@ -19,9 +19,11 @@
 <body>
 
 <div class="player">
-    <h3 id="display-title">Pilih Lagu...</h3>
+    <h3 id="display-title">Pilih Lagu dari flashdisk </h3>
     <!-- ID disamakan menjadi audioElement -->
-    <audio id="audioElement" crossOrigin="anonymous"></audio>
+    <audio id="audioElement" crossOrigin="anonymous">  
+        <source src="lagu.mp3" type="audio/mpeg">
+</audio>
 
     <div class="controls">
         <button onclick="playPause()" id="btn-play">▶ PLAY</button>
