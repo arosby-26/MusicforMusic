@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Music Player with Equalizer</title>
+    <title>MusicforMusic</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; display: flex; justify-content: center; padding: 40px; }
         .player { background: #181818; padding: 25px; border-radius: 20px; width: 380px; box-shadow: 0 15px 35px rgba(0,0,0,0.7); }
@@ -20,6 +20,7 @@
 
 <div class="player">
     <h3 id="display-title">Pilih Lagu...</h3>
+    <!-- ID disamakan menjadi audioElement -->
     <audio id="audioElement" crossOrigin="anonymous"></audio>
 
     <div class="controls">
@@ -30,7 +31,6 @@
         </div>
     </div>
 
-    <!-- PENGATUR SUARA (EQ) -->
     <div class="eq-controls">
         <div class="row">
             <span>🔊 Volume</span>
@@ -41,7 +41,7 @@
             <input type="range" id="bass-control" min="-10" max="10" step="1" value="0">
         </div>
         <div class="row">
-            <span>🎼 Treble (Twiter)</span>
+            <span>🎼 Treble</span>
             <input type="range" id="treble-control" min="-10" max="10" step="1" value="0">
         </div>
     </div>
@@ -56,36 +56,50 @@
     ];
 
     let currentIndex = 0;
-    const audio = document.getElementById('audio-element');
+    // Memperbaiki pemanggilan ID agar cocok dengan HTML
+    const audio = document.getElementById('audioElement');
     const playBtn = document.getElementById('btn-play');
     
-    // --- LOGIKA WEB AUDIO API (Equalizer) ---
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioCtx.createMediaElementSource(audio);
+    // Inisialisasi Audio Context (Hanya setelah interaksi user)
+    let audioCtx;
+    let source;
+    let bassFilter;
+    let trebleFilter;
 
-    // Filter Bass (LowShelf)
-    const bassFilter = audioCtx.createBiquadFilter();
-    bassFilter.type = "lowshelf";
-    bassFilter.frequency.value = 200; // Frekuensi Bass
+    function initAudioContext() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            source = audioCtx.createMediaElementSource(audio);
 
-    // Filter Treble (HighShelf)
-    const trebleFilter = audioCtx.createBiquadFilter();
-    trebleFilter.type = "highshelf";
-    trebleFilter.frequency.value = 3000; // Frekuensi Treble/Twitter
+            bassFilter = audioCtx.createBiquadFilter();
+            bassFilter.type = "lowshelf";
+            bassFilter.frequency.value = 200;
 
-    // Sambungkan Jalur: Audio -> Bass -> Treble -> Speaker
-    source.connect(bassFilter);
-    bassFilter.connect(trebleFilter);
-    trebleFilter.connect(audioCtx.destination);
+            trebleFilter = audioCtx.createBiquadFilter();
+            trebleFilter.type = "highshelf";
+            trebleFilter.frequency.value = 3000;
 
-    // Event Listeners untuk Slider
+            source.connect(bassFilter);
+            bassFilter.connect(trebleFilter);
+            trebleFilter.connect(audioCtx.destination);
+            
+            // Pasang event slider setelah context dibuat
+            document.getElementById('bass-control').oninput = (e) => bassFilter.gain.value = e.target.value;
+            document.getElementById('treble-control').oninput = (e) => trebleFilter.gain.value = e.target.value;
+        }
+    }
+
     document.getElementById('vol-control').oninput = (e) => audio.volume = e.target.value;
-    document.getElementById('bass-control').oninput = (e) => bassFilter.gain.value = e.target.value;
-    document.getElementById('treble-control').oninput = (e) => trebleFilter.gain.value = e.target.value;
 
     function playPause() {
-        if (audioCtx.state === 'suspended') audioCtx.resume(); // Aktifkan Audio Context
-        if (audio.src === "") { loadSong(0); return; }
+        initAudioContext(); // Jalankan context saat tombol ditekan
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        if (audio.src === "" || audio.src === window.location.href) { 
+            loadSong(0); 
+            return; 
+        }
+
         if (audio.paused) {
             audio.play();
             playBtn.innerText = "⏸ PAUSE";
@@ -96,15 +110,27 @@
     }
 
     function loadSong(index) {
+        initAudioContext();
         currentIndex = index;
         audio.src = songs[currentIndex].url;
         document.getElementById('display-title').innerText = songs[currentIndex].title;
-        audio.play();
+        
+        // Tandai lagu aktif di playlist
+        updatePlaylistStyle(index);
+        
+        audio.play().catch(e => console.log("Error playing:", e));
         playBtn.innerText = "⏸ PAUSE";
     }
 
     function next() { currentIndex = (currentIndex + 1) % songs.length; loadSong(currentIndex); }
     function prev() { currentIndex = (currentIndex - 1 + songs.length) % songs.length; loadSong(currentIndex); }
+
+    function updatePlaylistStyle(index) {
+        const items = document.querySelectorAll('.playlist li');
+        items.forEach((li, i) => {
+            li.className = (i === index) ? "active" : "";
+        });
+    }
 
     // Render Playlist
     songs.forEach((s, i) => {
@@ -117,4 +143,3 @@
 
 </body>
 </html>
-
