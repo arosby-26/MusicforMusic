@@ -2,104 +2,117 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Music Player Pro</title>
+    <title>Music Player with Equalizer</title>
     <style>
-        body { font-family: Arial, sans-serif; display: flex; justify-content: center; padding: 50px; background: #121212; color: white; }
-        .player { background: #1e1e1e; padding: 30px; border-radius: 20px; width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h3 { margin-bottom: 20px; color: #1DB954; } /* Warna Hijau Spotify */
-        .controls { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
-        button { background: #333; color: white; border: none; padding: 10px 15px; border-radius: 50px; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #1DB954; }
-        .playlist { list-style: none; padding: 0; text-align: left; }
-        .playlist li { padding: 10px; border-bottom: 1px solid #333; cursor: pointer; }
-        .playlist li:hover { color: #1DB954; }
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; display: flex; justify-content: center; padding: 40px; }
+        .player { background: #181818; padding: 25px; border-radius: 20px; width: 380px; box-shadow: 0 15px 35px rgba(0,0,0,0.7); }
+        .controls, .eq-controls { margin: 20px 0; display: flex; flex-direction: column; gap: 10px; }
+        .row { display: flex; justify-content: space-between; align-items: center; background: #282828; padding: 10px; border-radius: 10px; }
+        input[type="range"] { cursor: pointer; width: 120px; accent-color: #1DB954; }
+        button { background: #1DB954; border: none; padding: 12px; border-radius: 50px; color: black; font-weight: bold; cursor: pointer; }
+        .playlist { list-style: none; padding: 0; max-height: 150px; overflow-y: auto; border-top: 1px solid #333; }
+        .playlist li { padding: 10px; cursor: pointer; border-radius: 5px; }
+        .playlist li:hover { background: #282828; }
         .active { color: #1DB954; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="player">
-    <h3 id="display-title">Pilih Lagu</h3>
-    <audio id="audio-element"></audio>
+    <h3 id="display-title">Pilih Lagu...</h3>
+    <audio id="audio-element" crossOrigin="anonymous"></audio>
 
     <div class="controls">
-        <button onclick="prev()">⏮ Prev</button>
-        <button onclick="playPause()" id="btn-play">▶ Play</button>
-        <button onclick="next()">Next ⏭</button>
+        <button onclick="playPause()" id="btn-play">▶ PLAY</button>
+        <div style="display:flex; gap:10px; justify-content: center;">
+            <button onclick="prev()">⏮ Prev</button>
+            <button onclick="next()">Next ⏭</button>
+        </div>
     </div>
 
-    <ul class="playlist" id="playlist-list">
-        <!-- Daftar lagu akan muncul otomatis dari JavaScript -->
-    </ul>
+    <!-- PENGATUR SUARA (EQ) -->
+    <div class="eq-controls">
+        <div class="row">
+            <span>🔊 Volume</span>
+            <input type="range" id="vol-control" min="0" max="1" step="0.1" value="0.5">
+        </div>
+        <div class="row">
+            <span>🎸 Bass</span>
+            <input type="range" id="bass-control" min="-10" max="10" step="1" value="0">
+        </div>
+        <div class="row">
+            <span>🎼 Treble (Twiter)</span>
+            <input type="range" id="treble-control" min="-10" max="10" step="1" value="0">
+        </div>
+    </div>
+
+    <ul class="playlist" id="playlist-list"></ul>
 </div>
 
 <script>
-    // 1. DATA PLAYLIST (Ganti link Drive di sini)
- const songs = [
-    { title: "drive.google.com/file/d/1TfW6wroiLuuDMfHOS9jTGw5xT4kXOU-_/view?usp=drivesdk"},
-    { title: "Lagu Flashdisk 2", url: "lagu Madura"},
-    { title: "Lagu Flashdisk 3", url: "Music"}
-];
-
+    const songs = [
+        { title: "Lagu 1", url: "lagu1.mp3" },
+        { title: "Lagu 2", url: "lagu2.mp3" }
+    ];
 
     let currentIndex = 0;
     const audio = document.getElementById('audio-element');
-    const displayTitle = document.getElementById('display-title');
     const playBtn = document.getElementById('btn-play');
-    const playlistElement = document.getElementById('playlist-list');
+    
+    // --- LOGIKA WEB AUDIO API (Equalizer) ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaElementSource(audio);
 
-    // 2. FUNGSI GENERATE PLAYLIST KE LAYAR
-    function buildPlaylist() {
-        songs.forEach((song, index) => {
-            let li = document.createElement('li');
-            li.innerHTML = song.title;
-            li.setAttribute('id', 'song-' + index);
-            li.onclick = () => loadSong(index);
-            playlistElement.appendChild(li);
-        });
-    }
+    // Filter Bass (LowShelf)
+    const bassFilter = audioCtx.createBiquadFilter();
+    bassFilter.type = "lowshelf";
+    bassFilter.frequency.value = 200; // Frekuensi Bass
 
-    // 3. FUNGSI MUAT LAGU
-    function loadSong(index) {
-        currentIndex = index;
-        audio.src = songs[currentIndex].url;
-        displayTitle.innerText = songs[currentIndex].title;
-        
-        // Highlight lagu yang aktif
-        document.querySelectorAll('.playlist li').forEach(el => el.classList.remove('active'));
-        document.getElementById('song-' + index).classList.add('active');
-        
-        audio.play();
-        playBtn.innerText = "⏸ Pause";
-    }
+    // Filter Treble (HighShelf)
+    const trebleFilter = audioCtx.createBiquadFilter();
+    trebleFilter.type = "highshelf";
+    trebleFilter.frequency.value = 3000; // Frekuensi Treble/Twitter
 
-    // 4. TOMBOL CONTROLS
+    // Sambungkan Jalur: Audio -> Bass -> Treble -> Speaker
+    source.connect(bassFilter);
+    bassFilter.connect(trebleFilter);
+    trebleFilter.connect(audioCtx.destination);
+
+    // Event Listeners untuk Slider
+    document.getElementById('vol-control').oninput = (e) => audio.volume = e.target.value;
+    document.getElementById('bass-control').oninput = (e) => bassFilter.gain.value = e.target.value;
+    document.getElementById('treble-control').oninput = (e) => trebleFilter.gain.value = e.target.value;
+
     function playPause() {
+        if (audioCtx.state === 'suspended') audioCtx.resume(); // Aktifkan Audio Context
         if (audio.src === "") { loadSong(0); return; }
         if (audio.paused) {
             audio.play();
-            playBtn.innerText = "⏸ Pause";
+            playBtn.innerText = "⏸ PAUSE";
         } else {
             audio.pause();
-            playBtn.innerText = "▶ Play";
+            playBtn.innerText = "▶ PLAY";
         }
     }
 
-    function next() {
-        currentIndex = (currentIndex + 1) % songs.length;
-        loadSong(currentIndex);
+    function loadSong(index) {
+        currentIndex = index;
+        audio.src = songs[currentIndex].url;
+        document.getElementById('display-title').innerText = songs[currentIndex].title;
+        audio.play();
+        playBtn.innerText = "⏸ PAUSE";
     }
 
-    function prev() {
-        currentIndex = (currentIndex - 1 + songs.length) % songs.length;
-        loadSong(currentIndex);
-    }
+    function next() { currentIndex = (currentIndex + 1) % songs.length; loadSong(currentIndex); }
+    function prev() { currentIndex = (currentIndex - 1 + songs.length) % songs.length; loadSong(currentIndex); }
 
-    // 5. OTOMATIS NEXT KALAU LAGU HABIS
-    audio.onended = () => next();
-
-    // Jalankan daftar lagu saat halaman dibuka
-    buildPlaylist();
+    // Render Playlist
+    songs.forEach((s, i) => {
+        let li = document.createElement('li');
+        li.innerHTML = s.title;
+        li.onclick = () => loadSong(i);
+        document.getElementById('playlist-list').appendChild(li);
+    });
 </script>
 
 </body>
